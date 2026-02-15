@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HeartGuard AI - Predicción de Fallo Cardíaco</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2A5C7D;
+            --secondary-color: #4A90E2;
+            --success-color: #27ae60;
+            --danger-color: #e74c3c;
+            --light-bg: #f8fafc;
+            --card-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        /* Tarjetas animadas */
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            font-weight: 600;
+            padding: 1.2rem 1.5rem;
+            border-bottom: none;
+        }
+        .card-header i {
+            margin-right: 10px;
+        }
+        /* Botones profesionales */
+        .btn-custom {
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-custom::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        .btn-custom:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        .btn-primary-custom {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+        .btn-primary-custom:hover {
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            color: white;
+            box-shadow: 0 5px 15px rgba(74, 144, 226, 0.4);
+        }
+        .btn-outline-custom {
+            background: transparent;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+        .btn-outline-custom:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+        /* Formulario */
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 10px 15px;
+            transition: all 0.3s;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(74, 144, 226, 0.25);
+        }
+        .form-label {
+            font-weight: 500;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+        /* Tabla de historial */
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border-radius: 15px;
+        }
+        .table {
+            margin-bottom: 0;
+        }
+        .table thead th {
+            background: var(--primary-color);
+            color: white;
+            font-weight: 500;
+            border: none;
+            position: sticky;
+            top: 0;
+        }
+        .table tbody tr {
+            transition: background 0.2s;
+        }
+        .table tbody tr:hover {
+            background: #f1f4f8;
+        }
+        /* Badges de predicción */
+        .badge-risk-high {
+            background: linear-gradient(135deg, #f43b47, #e74c3c);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 50px;
+            font-weight: 600;
+        }
+        .badge-risk-low {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 50px;
+            font-weight: 600;
+        }
+        /* Resultado animado */
+        #resultContainer {
+            transition: all 0.5s ease;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        #resultContainer.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Responsive */
+        @media (max-width: 768px) {
+            .card-header h3 {
+                font-size: 1.2rem;
+            }
+            .btn-custom {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container container">
+        <!-- Título principal -->
+        <div class="text-center mb-4 animate__animated animate__fadeIn">
+            <h1 class="display-5 fw-bold" style="color: var(--primary-color);">
+                <i class="fas fa-heartbeat me-2" style="color: var(--danger-color);"></i>
+                HeartGuard AI
+            </h1>
+            <p class="lead text-muted">Sistema profesional de predicción de riesgo cardíaco con Machine Learning</p>
+        </div>
+
+        <div class="row g-4">
+            <!-- Columna izquierda: Formulario -->
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-stethoscope"></i> Datos del Paciente
+                    </div>
+                    <div class="card-body">
+                        <form id="predictionForm">
+                            <div class="row g-3">
+                                <!-- Fila 1 -->
+                                <div class="col-md-6">
+                                    <label class="form-label">Edad</label>
+                                    <input type="number" class="form-control" id="Age" name="Age" min="18" max="120" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Sexo</label>
+                                    <select class="form-select" id="Sex" required>
+                                        <option value="">Seleccionar</option>
+                                        <option value="M">Masculino</option>
+                                        <option value="F">Femenino</option>
+                                    </select>
+                                </div>
+                                <!-- Fila 2 -->
+                                <div class="col-md-6">
+                                    <label class="form-label">Tipo de dolor en pecho</label>
+                                    <select class="form-select" id="ChestPainType" required>
+                                        <option value="">Seleccionar</option>
+                                        <option value="ATA">Angina Atípica</option>
+                                        <option value="NAP">Angina No Anginal</option>
+                                        <option value="ASY">Asintomático</option>
+                                        <option value="TA">Angina Típica</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Presión arterial en reposo</label>
+                                    <input type="number" class="form-control" id="RestingBP" min="50" max="250" required>
+                                </div>
+                                <!-- Fila 3 -->
+                                <div class="col-md-6">
+                                    <label class="form-label">Colesterol</label>
+                                    <input type="number" class="form-control" id="Cholesterol" min="0" max="600" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Glucemia en ayunas (> 120 mg/dl)</label>
+                                    <select class="form-select" id="FastingBS" required>
+                                        <option value="">Seleccionar</option>
+                                        <option value="1">Sí</option>
+                                        <option value="0">No</option>
+                                    </select>
+                                </div>
+                                <!-- Fila 4 -->
+                                <div class="col-md-6">
+                                    <label class="form-label">ECG en reposo</label>
+                                    <select class="form-select" id="RestingECG" required>
+                                        <option value="">Seleccionar</option>
+                                        <option value="Normal">Normal</option>
+                                        <option value="ST">Anomalía de onda ST</option>
+                                        <option value="LVH">Hipertrofia ventricular izquierda</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Frecuencia cardíaca máxima</label>
+                                    <input type="number" class="form-control" id="MaxHR" min="60" max="250" required>
+                                </div>
+                                <!-- Fila 5 -->
+                                <div class="col-md-6">
+                                    <label class="form-label">Angina inducida por ejercicio</label>
+                                    <select class="form-select" id="ExerciseAngina" required>
+                                        <option value="">Seleccionar</option>
+                                        <option value="Y">Sí</option>
+                                        <option value="N">No</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Oldpeak (depresión del ST)</label>
+                                    <input type="number" step="0.1" class="form-control" id="Oldpeak" min="-5" max="10" required>
+                                </div>
+                                <!-- Fila 6 -->
+                                <div class="col-md-12">
+                                    <label class="form-label">Pendiente del ST</label>
+                                    <select class="form-select" id="ST_Slope" required>
+                                        <option value="">Seleccionar</option>
+                                        <option value="Up">Ascendente</option>
+                                        <option value="Flat">Plana</option>
+                                        <option value="Down">Descendente</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="card-footer bg-transparent d-flex justify-content-between gap-2 flex-wrap">
+                        <button type="button" class="btn btn-primary-custom btn-custom" id="predictBtn">
+                            <i class="fas fa-brain me-2"></i>Realizar Predicción
+                        </button>
+                        <button type="button" class="btn btn-outline-custom btn-custom" id="clearBtn">
+                            <i class="fas fa-eraser me-2"></i>Limpiar Formulario
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Resultado de la predicción -->
+                <div class="card" id="resultContainer">
+                    <div class="card-header bg-success text-white">
+                        <i class="fas fa-clipboard-check"></i> Resultado del Análisis
+                    </div>
+                    <div class="card-body text-center">
+                        <div id="predictionResult">
+                            <p class="lead mb-0">Complete el formulario y realice una predicción.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna derecha: Historial -->
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-history me-2"></i>Historial de Predicciones</span>
+                        <button class="btn btn-sm btn-danger" id="clearHistoryBtn">
+                            <i class="fas fa-trash-alt me-1"></i>Limpiar Todo
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Edad/Sexo</th>
+                                        <th>Resultado</th>
+                                        <th>Prob.</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="historyTableBody">
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">No hay predicciones aún.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Mostrando las últimas 50 predicciones. Los datos se guardan localmente.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS y dependencias -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Función para cargar el historial
+        async function loadHistory() {
+            try {
+                const response = await fetch('/history');
+                const data = await response.json();
+                if (data.success) {
+                    const tbody = document.getElementById('historyTableBody');
+                    if (data.data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No hay predicciones aún.</td></tr>';
+                    } else {
+                        let html = '';
+                        data.data.forEach(row => {
+                            const fecha = new Date(row[0]).toLocaleString();
+                            const edad = row[1];
+                            const sexo = row[2] === 'M' ? '♂' : '♀';
+                            const resultado = row[12];
+                            const prob = row[13] ? (row[13] * 100).toFixed(1) + '%' : 'N/A';
+                            const badgeClass = resultado === 1 ? 'badge-risk-high' : 'badge-risk-low';
+                            const resultadoText = resultado === 1 ? 'Riesgo Alto' : 'Riesgo Bajo';
+                            
+                            html += `<tr>
+                                <td><small>${fecha}</small></td>
+                                <td>${edad} ${sexo}</td>
+                                <td><span class="${badgeClass}">${resultadoText}</span></td>
+                                <td>${prob}</td>
+                            </tr>`;
+                        });
+                        tbody.innerHTML = html;
+                    }
+                }
+            } catch (error) {
+                console.error('Error cargando historial:', error);
+            }
+        }
+
+        // Función para limpiar el formulario
+        function clearForm() {
+            document.getElementById('predictionForm').reset();
+            // Opcional: quitar clases de validación
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            loadHistory();
+
+            // Botón de predicción
+            document.getElementById('predictBtn').addEventListener('click', async () => {
+                const form = document.getElementById('predictionForm');
+                
+                // Validación básica
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
+                // Recoger datos del formulario
+                const data = {
+                    Age: document.getElementById('Age').value,
+                    Sex: document.getElementById('Sex').value,
+                    ChestPainType: document.getElementById('ChestPainType').value,
+                    RestingBP: document.getElementById('RestingBP').value,
+                    Cholesterol: document.getElementById('Cholesterol').value,
+                    FastingBS: document.getElementById('FastingBS').value,
+                    RestingECG: document.getElementById('RestingECG').value,
+                    MaxHR: document.getElementById('MaxHR').value,
+                    ExerciseAngina: document.getElementById('ExerciseAngina').value,
+                    Oldpeak: document.getElementById('Oldpeak').value,
+                    ST_Slope: document.getElementById('ST_Slope').value
+                };
+
+                try {
+                    const response = await fetch('/predict', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(data)
+                    });
+                    const result = await response.json();
+
+                    const resultDiv = document.getElementById('predictionResult');
+                    const container = document.getElementById('resultContainer');
+
+                    if (result.success) {
+                        const riskClass = result.prediction === 1 ? 'badge-risk-high' : 'badge-risk-low';
+                        const riskText = result.prediction === 1 ? 'Alto Riesgo' : 'Bajo Riesgo';
+                        const probText = result.probability ? (result.probability * 100).toFixed(1) + '%' : 'N/A';
+                        
+                        resultDiv.innerHTML = `
+                            <div class="py-3">
+                                <span class="${riskClass}" style="font-size: 1.5rem;">${riskText}</span>
+                                <p class="mt-3 mb-0">Probabilidad: <strong>${probText}</strong></p>
+                                <p class="text-muted small mt-2">${result.message}</p>
+                            </div>
+                        `;
+                        container.classList.add('show');
+                        
+                        // Recargar historial
+                        await loadHistory();
+                    } else {
+                        resultDiv.innerHTML = `<p class="text-danger">Error: ${result.error}</p>`;
+                        container.classList.add('show');
+                    }
+                } catch (error) {
+                    alert('Error de conexión: ' + error);
+                }
+            });
+
+            // Botón limpiar formulario
+            document.getElementById('clearBtn').addEventListener('click', () => {
+                clearForm();
+                document.getElementById('resultContainer').classList.remove('show');
+            });
+
+            // Botón limpiar historial
+            document.getElementById('clearHistoryBtn').addEventListener('click', async () => {
+                if (confirm('¿Estás seguro de que quieres borrar TODO el historial? Esta acción no se puede deshacer.')) {
+                    try {
+                        const response = await fetch('/clear_history', { method: 'POST' });
+                        const result = await response.json();
+                        if (result.success) {
+                            await loadHistory();
+                            alert('Historial limpiado correctamente.');
+                        } else {
+                            alert('Error al limpiar historial: ' + result.error);
+                        }
+                    } catch (error) {
+                        alert('Error de conexión: ' + error);
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
